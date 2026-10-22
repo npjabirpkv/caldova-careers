@@ -7,6 +7,35 @@
  */
 import type { Job } from '../types/job';
 
+/** Optional criteria for narrowing the open-roles listing. */
+export interface JobFilterCriteria {
+    department?: string;
+    location?: string;
+    remote?: boolean;
+    type?: string;
+}
+
+interface FilterableJob {
+    department: string;
+    location: string;
+    remote: boolean;
+    type: string;
+}
+
+/** Return jobs matching every supplied criterion without mutating the input. */
+export function filterJobs<T extends FilterableJob>(
+    jobs: T[],
+    criteria: JobFilterCriteria,
+): T[] {
+    return jobs.filter(
+        (job) =>
+            (criteria.department === undefined || job.department === criteria.department) &&
+            (criteria.location === undefined || job.location === criteria.location) &&
+            (criteria.remote === undefined || job.remote === criteria.remote) &&
+            (criteria.type === undefined || job.type === criteria.type),
+    );
+}
+
 /** Return jobs sorted by posted date, newest first (does not mutate input). */
 export function sortByNewest(jobs: Job[]): Job[] {
     return [...jobs].sort(
