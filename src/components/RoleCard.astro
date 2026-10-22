@@ -16,6 +16,8 @@ const { job } = Astro.props;
     data-testid="role-card"
     data-job-id={job.slug}
     data-department={job.department}
+    data-remote={job.remote}
+    data-type={job.type}
 >
     <div class="p-6">
         <h3

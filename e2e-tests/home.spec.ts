@@ -15,7 +15,9 @@ test.describe('Open roles listing', () => {
 
         const grid = page.getByTestId('roles-grid');
         await expect(grid).toBeVisible();
-        await expect(page.getByTestId('role-card')).toHaveCount(expectedRoleCount);
+        await expect(page.locator('[data-testid="role-card"]:visible')).toHaveCount(
+            expectedRoleCount,
+        );
     });
 
     test('links through to a role detail page', async ({ page }) => {
@@ -25,6 +27,42 @@ test.describe('Open roles listing', () => {
         await firstCard.click();
         await expect(page.getByTestId('role-detail-title')).toHaveText(title!.trim());
         await expect(page.getByTestId('apply-form')).toBeVisible();
+    });
+
+    test('filters roles by department and remote status together', async ({ page }) => {
+        await page.goto('/');
+        const visibleCards = page.locator('[data-testid="role-card"]:visible');
+
+        await page.getByTestId('department-filter').selectOption('Technology');
+        await expect(visibleCards).toHaveCount(2);
+
+        await page.getByTestId('remote-filter').selectOption('on-site');
+        await expect(visibleCards).toHaveCount(0);
+        await expect(page.getByTestId('no-filter-results')).toBeVisible();
+
+        await page.getByTestId('remote-filter').selectOption('remote');
+        await expect(visibleCards).toHaveCount(2);
+        await expect(
+            page.getByTestId('role-title').filter({ hasText: 'Senior Frontend Engineer' }),
+        ).toBeVisible();
+        await expect(page.getByTestId('no-filter-results')).toBeHidden();
+
+        await page.getByTestId('department-filter').selectOption('');
+        await page.getByTestId('remote-filter').selectOption('');
+        await expect(visibleCards).toHaveCount(expectedRoleCount);
+    });
+
+    test('filters by employment type and shows when no roles match', async ({ page }) => {
+        await page.goto('/');
+        const visibleCards = page.locator('[data-testid="role-card"]:visible');
+
+        await page.getByTestId('employment-type-filter').selectOption('Contract');
+        await expect(visibleCards).toHaveCount(1);
+        await expect(visibleCards.first().getByTestId('role-title')).toHaveText('Procurement Analyst');
+
+        await page.getByTestId('department-filter').selectOption('Technology');
+        await expect(visibleCards).toHaveCount(0);
+        await expect(page.getByTestId('no-filter-results')).toBeVisible();
     });
 
     for (const { title, location } of [

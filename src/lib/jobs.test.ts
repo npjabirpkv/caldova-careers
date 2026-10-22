@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { sortByNewest, formatPostedDate } from './jobs';
+import { filterJobs, sortByNewest, formatPostedDate } from './jobs';
 import type { Job } from '../types/job';
 
 function makeJob(slug: string, postedDate: string): Job {
@@ -14,6 +14,48 @@ function makeJob(slug: string, postedDate: string): Job {
         summary: 'A role.',
     };
 }
+
+describe('filterJobs', () => {
+    const jobs: Job[] = [
+        { ...makeJob('remote-tech', '2027-01-03'), department: 'Technology', remote: true },
+        { ...makeJob('onsite-tech', '2027-01-02'), department: 'Technology', remote: false },
+        {
+            ...makeJob('contract-finance', '2027-01-01'),
+            department: 'Finance',
+            remote: false,
+            type: 'Contract',
+        },
+    ];
+
+    it('returns all jobs when no criteria are provided', () => {
+        expect(filterJobs(jobs, {})).toEqual(jobs);
+    });
+
+    it('filters by department, remote status, and employment type', () => {
+        expect(filterJobs(jobs, { department: 'Technology' }).map((job) => job.slug)).toEqual([
+            'remote-tech',
+            'onsite-tech',
+        ]);
+        expect(filterJobs(jobs, { remote: true }).map((job) => job.slug)).toEqual([
+            'remote-tech',
+        ]);
+        expect(filterJobs(jobs, { type: 'Contract' }).map((job) => job.slug)).toEqual([
+            'contract-finance',
+        ]);
+    });
+
+    it('combines criteria and does not mutate the input', () => {
+        const originalSlugs = jobs.map((job) => job.slug);
+
+        expect(
+            filterJobs(jobs, { department: 'Technology', remote: true, type: 'Full-time' }).map(
+                (job) => job.slug,
+            ),
+        ).toEqual(['remote-tech']);
+        expect(filterJobs(jobs, { department: 'Technology', type: 'Contract' })).toEqual([]);
+        expect(jobs.map((job) => job.slug)).toEqual(originalSlugs);
+    });
+});
 
 describe('sortByNewest', () => {
     it('orders jobs by posted date, newest first', () => {

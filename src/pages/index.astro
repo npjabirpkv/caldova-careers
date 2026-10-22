@@ -12,6 +12,12 @@ const entries = await getCollection('jobs');
 const jobs: Job[] = sortByNewest(
     entries.map((entry) => ({ slug: entry.id, ...entry.data })),
 );
+const departments = [...new Set(jobs.map((job) => job.department))].sort((a, b) =>
+  a.localeCompare(b),
+);
+const employmentTypes = [...new Set(jobs.map((job) => job.type))].sort((a, b) =>
+  a.localeCompare(b),
+);
 ---
 
 <Layout title="Caldova Careers — Open roles">
@@ -29,12 +35,116 @@ const jobs: Job[] = sortByNewest(
     {jobs.length === 0 ? (
       <EmptyState text="There are no open roles right now. Check back soon." />
     ) : (
-      <div
-        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
-        data-testid="roles-grid"
-      >
-        {jobs.map((job) => <RoleCard job={job} />)}
-      </div>
+      <>
+        <form
+          class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6"
+          data-testid="role-filters"
+          aria-label="Filter open roles"
+        >
+          <label class="block text-sm font-medium text-slate-300">
+            Department
+            <select
+              id="department-filter"
+              name="department"
+              data-testid="department-filter"
+              class="mt-1 block w-full rounded-lg border border-slate-600 bg-slate-800 px-3 py-2 text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            >
+              <option value="">All departments</option>
+              {departments.map((department) => <option value={department}>{department}</option>)}
+            </select>
+          </label>
+
+          <label class="block text-sm font-medium text-slate-300">
+            Remote status
+            <select
+              id="remote-filter"
+              name="remote"
+              data-testid="remote-filter"
+              class="mt-1 block w-full rounded-lg border border-slate-600 bg-slate-800 px-3 py-2 text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            >
+              <option value="">Any remote status</option>
+              <option value="remote">Remote</option>
+              <option value="on-site">On-site</option>
+            </select>
+          </label>
+
+          <label class="block text-sm font-medium text-slate-300">
+            Employment type
+            <select
+              id="employment-type-filter"
+              name="type"
+              data-testid="employment-type-filter"
+              class="mt-1 block w-full rounded-lg border border-slate-600 bg-slate-800 px-3 py-2 text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            >
+              <option value="">All employment types</option>
+              {employmentTypes.map((type) => <option value={type}>{type}</option>)}
+            </select>
+          </label>
+        </form>
+
+        <p
+          class="mb-6 text-center text-slate-300"
+          hidden
+          data-testid="no-filter-results"
+          aria-live="polite"
+        >
+          No roles match the selected filters.
+        </p>
+
+        <div
+          class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+          data-testid="roles-grid"
+        >
+          {jobs.map((job) => <RoleCard job={job} />)}
+        </div>
+      </>
     )}
   </div>
 </Layout>
+
+<script>
+  import { filterJobs } from '../lib/jobs';
+
+  const filterForm = document.querySelector<HTMLFormElement>('[data-testid="role-filters"]');
+  const noResultsMessage = document.querySelector<HTMLElement>(
+    '[data-testid="no-filter-results"]',
+  );
+
+  if (filterForm && noResultsMessage) {
+    const departmentFilter = filterForm.querySelector<HTMLSelectElement>('#department-filter');
+    const remoteFilter = filterForm.querySelector<HTMLSelectElement>('#remote-filter');
+    const employmentTypeFilter =
+      filterForm.querySelector<HTMLSelectElement>('#employment-type-filter');
+    const roleCards = Array.from(
+      document.querySelectorAll<HTMLAnchorElement>('[data-testid="role-card"]'),
+    );
+
+    if (departmentFilter && remoteFilter && employmentTypeFilter) {
+      const roles = roleCards.map((card) => ({
+        card,
+        department: card.dataset.department ?? '',
+        remote: card.dataset.remote === 'true',
+        type: card.dataset.type ?? '',
+      }));
+
+      const updateVisibleRoles = (): void => {
+        const matchingRoles = filterJobs(roles, {
+          department: departmentFilter.value || undefined,
+          remote:
+            remoteFilter.value === ''
+              ? undefined
+              : remoteFilter.value === 'remote',
+          type: employmentTypeFilter.value || undefined,
+        });
+        const visibleCards = new Set(matchingRoles.map((role) => role.card));
+
+        for (const card of roleCards) {
+          card.hidden = !visibleCards.has(card);
+        }
+        noResultsMessage.hidden = matchingRoles.length > 0;
+      };
+
+      filterForm.addEventListener('change', updateVisibleRoles);
+    }
+  }
+</script>
