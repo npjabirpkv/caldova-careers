@@ -52,6 +52,23 @@ test.describe('Open roles listing', () => {
         await expect(visibleCards).toHaveCount(expectedRoleCount);
     });
 
+    test('filters roles by location independently and together with department', async ({ page }) => {
+        await page.goto('/');
+        const visibleCards = page.locator('[data-testid="role-card"]:visible');
+
+        await page.getByTestId('location-filter').selectOption('Woodinville, WA, USA');
+        await expect(visibleCards).toHaveCount(3);
+
+        await page.getByTestId('department-filter').selectOption('Finance');
+        await expect(visibleCards).toHaveCount(1);
+        await expect(visibleCards.first().getByTestId('role-title')).toHaveText('Financial Analyst');
+
+        await page.getByTestId('location-filter').selectOption('');
+        await expect(visibleCards).toHaveCount(2);
+        await page.getByTestId('department-filter').selectOption('');
+        await expect(visibleCards).toHaveCount(expectedRoleCount);
+    });
+
     test('filters by employment type and shows when no roles match', async ({ page }) => {
         await page.goto('/');
         const visibleCards = page.locator('[data-testid="role-card"]:visible');

@@ -10,12 +10,14 @@ import type { Job } from '../types/job';
 /** Optional criteria for narrowing the open-roles listing. */
 export interface JobFilterCriteria {
     department?: string;
+    location?: string;
     remote?: boolean;
     type?: string;
 }
 
 interface FilterableJob {
     department: string;
+    location: string;
     remote: boolean;
     type: string;
 }
@@ -28,6 +30,7 @@ export function filterJobs<T extends FilterableJob>(
     return jobs.filter(
         (job) =>
             (criteria.department === undefined || job.department === criteria.department) &&
+            (criteria.location === undefined || job.location === criteria.location) &&
             (criteria.remote === undefined || job.remote === criteria.remote) &&
             (criteria.type === undefined || job.type === criteria.type),
     );

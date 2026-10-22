@@ -17,11 +17,22 @@ function makeJob(slug: string, postedDate: string): Job {
 
 describe('filterJobs', () => {
     const jobs: Job[] = [
-        { ...makeJob('remote-tech', '2027-01-03'), department: 'Technology', remote: true },
-        { ...makeJob('onsite-tech', '2027-01-02'), department: 'Technology', remote: false },
+        {
+            ...makeJob('remote-tech', '2027-01-03'),
+            department: 'Technology',
+            location: 'Remote (US & Canada)',
+            remote: true,
+        },
+        {
+            ...makeJob('onsite-tech', '2027-01-02'),
+            department: 'Technology',
+            location: 'Woodinville, WA, USA',
+            remote: false,
+        },
         {
             ...makeJob('contract-finance', '2027-01-01'),
             department: 'Finance',
+            location: 'Helsinki, Finland',
             remote: false,
             type: 'Contract',
         },
@@ -35,6 +46,9 @@ describe('filterJobs', () => {
         expect(filterJobs(jobs, { department: 'Technology' }).map((job) => job.slug)).toEqual([
             'remote-tech',
             'onsite-tech',
+        ]);
+        expect(filterJobs(jobs, { location: 'Remote (US & Canada)' }).map((job) => job.slug)).toEqual([
+            'remote-tech',
         ]);
         expect(filterJobs(jobs, { remote: true }).map((job) => job.slug)).toEqual([
             'remote-tech',
@@ -53,6 +67,14 @@ describe('filterJobs', () => {
             ),
         ).toEqual(['remote-tech']);
         expect(filterJobs(jobs, { department: 'Technology', type: 'Contract' })).toEqual([]);
+        expect(
+            filterJobs(jobs, { department: 'Technology', location: 'Remote (US & Canada)' }).map(
+                (job) => job.slug,
+            ),
+        ).toEqual(['remote-tech']);
+        expect(
+            filterJobs(jobs, { department: 'Finance', location: 'Remote (US & Canada)' }),
+        ).toEqual([]);
         expect(jobs.map((job) => job.slug)).toEqual(originalSlugs);
     });
 });
